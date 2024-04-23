@@ -2,4 +2,3 @@ PyPDF2
 pandas
 regex
 datetime
-tempfile
