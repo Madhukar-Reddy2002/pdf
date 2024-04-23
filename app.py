@@ -4,6 +4,8 @@ import re
 import pandas as pd
 import os
 import tempfile
+from datetime import datetime
+import base64
 
 def extract_text_from_pdf(pdf_path):
     with open(pdf_path, 'rb') as pdf_file:
@@ -46,13 +48,19 @@ def process_transactions_text(all_text):
     transactions_nice = []
     for transaction_page in transactions_text:
         for transaction in transaction_page:
+            # Split the transaction string by spaces and strip each substring
             stripped_transaction = transaction.split(" ")
             cleared_transaction = [substr.strip() for substr in stripped_transaction if substr.strip()]
+            
+            # Process each cleared transaction
+            month = cleared_transaction[0]
+            date = cleared_transaction[1].rstrip(',')
+            year = cleared_transaction[2]
+            time = cleared_transaction[3] + " " + cleared_transaction[4]
+            transaction_date = datetime.strptime(f"{month} {date} {year} {time}", "%b %d %Y %I:%M %p")
+
             data = {
-                "month": cleared_transaction[0],
-                "date": cleared_transaction[1],
-                "year": cleared_transaction[2],
-                "time": cleared_transaction[3] + " " + cleared_transaction[4],
+                "date": transaction_date,
                 "type": cleared_transaction[5],
                 "amount": cleared_transaction[6],
                 "payee": " ".join(cleared_transaction[9:])
@@ -74,6 +82,12 @@ def main():
         df = pd.DataFrame(transactions_nice)
         st.write("Extracted DataFrame:")
         st.write(df)
+
+        # Add a download button for the CSV file
+        csv = df.to_csv(index=False)
+        b64 = base64.b64encode(csv.encode()).decode()
+        href = f'<a href="data:file/csv;base64,{b64}" download="transactions.csv">Download CSV File</a>'
+        st.markdown(href, unsafe_allow_html=True)
 
         # Clean up the temporary file
         os.unlink(temp_file.name)
