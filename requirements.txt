@@ -1,6 +1,5 @@
 PyPDF2
 pandas
 regex
-base64
 datetime
 tempfile
